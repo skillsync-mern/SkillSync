@@ -1,112 +1,225 @@
-# SkillSync
+# SkillSync – Skill-Based Job Matching Platform
 
-A MERN job platform that matches candidates and roles on **skills**. Every job lists required skills, every job seeker lists the skills they have, and SkillSync shows the overlap: matched skills as filled chips, missing ones as dashed chips, plus a 0 to 100% match meter.
+SkillSync is a MERN stack-based job portal designed to connect job seekers with suitable job opportunities based on their skills. Instead of relying only on keywords, the platform compares the skills required for a job with the skills available in a candidate's profile.
 
-Four portals share one MongoDB database and one API:
+It displays matched skills using filled chips, missing skills using dashed chips, and provides a match percentage from 0–100%.
 
-| Role | What they can do |
-| --- | --- |
-| **Job seeker** | Search and filter jobs, see skill match, save jobs, apply with a cover letter, track each application's history and interview time, withdraw, edit profile and skills |
-| **Company** | Everything a recruiter can do, plus edit the company profile, add/deactivate recruiters, resubmit after a rejection |
-| **Recruiter** | Post and manage the company's jobs, review applicants, move them through the pipeline, schedule interviews, leave internal notes |
-| **Admin** | Approve or reject companies, moderate and remove jobs, activate or deactivate users, platform stats |
+## User Roles and Features
 
-Recruiters and company owners share one hiring workspace (`/api/manage/*`, `Manage.jsx`). There is no separate copy for each role; the API scopes everything to the signed-in user's company.
+SkillSync supports four different user roles, all connected through a common MongoDB database and API.
 
-## Stack
+| Role | Features |
+|---|---|
+| **Job Seeker** | Browse and filter jobs, check skill matches, save jobs, apply with cover letters, track application progress, view interview schedules, withdraw applications, and update profiles. |
+| **Company** | Manage company information, add or deactivate recruiters, manage hiring activities, and resubmit company details after rejection. |
+| **Recruiter** | Create and manage job posts, review applications, shortlist candidates, update application status, schedule interviews, and add internal notes. |
+| **Admin** | Approve or reject companies, manage job listings, activate or deactivate users, and monitor platform statistics. |
 
-MongoDB + Mongoose 8, Express 4, React 19 (Vite, React Router), Node 18+. Auth is JWT (Bearer token) with bcrypt-hashed passwords. Validation uses zod. Tests use Jest + Supertest (API, against a real MongoDB) and Vitest + Testing Library (client).
+Company owners and recruiters use the same hiring dashboard. Their access is controlled according to their company and account permissions.
 
-## Setup
+## Technology Stack
 
-You need Node 18 or newer and a running MongoDB (local install, Docker `docker run -p 27017:27017 mongo:7`, or an Atlas URI).
+- **Frontend:** React 19, Vite, React Router
+- **Backend:** Node.js 18+, Express 4
+- **Database:** MongoDB with Mongoose 8
+- **Authentication:** JWT and bcrypt
+- **Validation:** Zod
+- **Testing:** Jest, Supertest, Vitest, Testing Library
+
+## Installation and Setup
+
+### Requirements
+
+- Node.js 18 or above
+- MongoDB installed locally, Docker, or MongoDB Atlas
+
+### Step 1: Install Dependencies
 
 ```bash
-npm run install:all          # installs root, server and client dependencies
-cp server/.env.example server/.env   # then edit JWT_SECRET and MONGO_URI
-npm run seed                 # loads demo data (wipes the target database)
-npm run dev                  # API on :5000, React dev server on :5173
+npm run install:all
 ```
 
-Open http://localhost:5173.
-
-### Production-style run (one server, one port)
+### Step 2: Configure Environment Variables
 
 ```bash
-npm run build                # builds client/dist
-NODE_ENV=production JWT_SECRET=<long random string> MONGO_URI=<uri> npm start
+cp server/.env.example server/.env
 ```
 
-The Express server serves the built React app and the API together on `PORT` (default 5000). In production `JWT_SECRET` is mandatory and the server refuses to start without it, and `npm run seed` refuses to run unless you add `--force`.
+Update the MongoDB connection URL and JWT secret in the `.env` file.
 
-### Environment variables (`server/.env`)
+### Step 3: Add Demo Data
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `PORT` | `5000` | API port |
-| `MONGO_URI` | `mongodb://127.0.0.1:27017/skillsync` | Database |
-| `MONGO_URI_TEST` | `mongodb://127.0.0.1:27017/skillsync_test` | Database used by tests (it is dropped afterwards) |
-| `JWT_SECRET` | dev-only value | Token signing key; required in production |
-| `JWT_EXPIRES_IN` | `7d` | Token lifetime |
-| `CLIENT_URL` | `http://localhost:5173` | CORS origin for the dev server |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | `admin@skillsync.dev` / `Admin123!` | Admin created by the seed |
+```bash
+npm run seed
+```
 
-## Demo accounts (after `npm run seed`)
+This command creates sample users, companies, jobs, and applications in the database. It will clear existing data in the target database.
+
+### Step 4: Start the Application
+
+```bash
+npm run dev
+```
+
+- Backend API: http://localhost:5000
+- Frontend: http://localhost:5173
+
+Open http://localhost:5173 in your browser.
+
+## Production Setup
+
+To run the application using a single server:
+
+```bash
+npm run build
+```
+
+Then start the server:
+
+```bash
+NODE_ENV=production JWT_SECRET=<your-secret> MONGO_URI=<your-uri> npm start
+```
+
+The Express server serves both the React frontend and API through the same port.
+
+## Demo Login Credentials
+
+After running the seed command, the following demo accounts are available:
 
 | Role | Email | Password |
-| --- | --- | --- |
+|---|---|---|
 | Admin | admin@skillsync.dev | Admin123! |
-| Company (approved) | priya@northwind.example | Password123! |
-| Company (pending approval) | sana@paperkite.example | Password123! |
+| Company | priya@northwind.example | Password123! |
+| Pending Company | sana@paperkite.example | Password123! |
 | Recruiter | arjun@northwind.example | Password123! |
-| Job seeker | naga@skillsync.dev | Password123! |
+| Job Seeker | naga@skillsync.dev | Password123! |
 
-The seed also creates 5 more job seekers, 11 jobs and 11 applications at different pipeline stages, so every screen has real data.
+The database also contains additional sample job seekers, 11 job listings, and 11 applications at different recruitment stages.
 
-## Tests
+## Main Features and Workflow
+
+### 1. Company Verification
+
+When a company registers, its account is initially marked as pending. An administrator reviews the company details and either approves or rejects the registration.
+
+Jobs posted by unapproved companies are not visible to job seekers. Rejected companies can update their information and submit it again for approval.
+
+### 2. Application Management
+
+Applications move through the following stages:
+
+`Applied → Reviewing → Shortlisted → Interview → Offered → Hired`
+
+Applications can also be rejected or withdrawn.
+
+The system maintains application history, including status changes, timestamps, messages, and the person responsible for each update.
+
+### 3. Skill Matching System
+
+SkillSync compares the skills listed in a candidate's profile with the skills required for a job.
+
+- Matched skills are displayed as filled chips.
+- Missing skills are displayed as dashed chips.
+- A percentage score indicates how closely the candidate matches the job requirements.
+
+The match score is calculated when the candidate applies and saved with the application.
+
+### 4. Notification System
+
+Users receive notifications for important activities, such as:
+
+- New job applications
+- Application status updates
+- Interview scheduling
+- Company approval or rejection
+- Recruiter registration
+- Job removal and application withdrawal
+
+Notifications are refreshed automatically every 30 seconds.
+
+## API Endpoints
+
+All API routes are available under `/api`.
+
+Authentication uses a JWT Bearer token.
+
+| Module | Main Endpoints |
+|---|---|
+| Authentication | `/auth/register`, `/auth/login`, `/auth/me` |
+| Profile | `/profile`, `/profile/password` |
+| Jobs | `/jobs`, `/jobs/:id`, `/jobs/summary` |
+| Applications | `/jobs/:id/apply`, `/applications/mine` |
+| Saved Jobs | `/jobs/:id/save`, `/jobs/saved` |
+| Hiring Management | `/manage/jobs`, `/manage/applications`, `/manage/company` |
+| Recruiters | `/manage/recruiters` |
+| Administration | `/admin/stats`, `/admin/companies`, `/admin/users`, `/admin/jobs` |
+| Notifications | `/notifications`, `/notifications/read-all` |
+
+## Project Structure
+
+```text
+SkillSync/
+│
+├── server/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── utils/
+│   │   ├── seed.js
+│   │   ├── app.js
+│   │   └── index.js
+│   │
+│   └── tests/
+│       └── api.test.js
+│
+├── client/
+│   └── src/
+│       ├── pages/
+│       ├── ui.jsx
+│       ├── auth.jsx
+│       ├── api.js
+│       └── utils.js
+│
+└── package.json
+```
+
+## Running Tests
+
+To execute all test suites:
 
 ```bash
-npm test                 # server then client
-npm test --prefix server # 39 API tests against a real MongoDB
-npm test --prefix client # 10 client tests
+npm test
 ```
 
-The API suite seeds `MONGO_URI_TEST`, then exercises auth, role guards, company isolation, search and filters, applications, pipeline rules, notifications and admin actions. It needs MongoDB running. It will never touch `MONGO_URI`.
+For backend tests:
 
-## How it works
-
-**Company approval.** A company registers as `pending`. Its jobs exist but are hidden from candidates until an admin approves it. A rejected company can fix its profile and resubmit. Admins and company owners get notifications at each step.
-
-**Application pipeline.** `applied → reviewing → shortlisted → interview → offered → hired`, with `rejected` reachable from any active stage and `withdrawn` set by the candidate. The server enforces the allowed moves (`models/Application.js`), requires a future date for interviews, and records every change (who, when, optional message) in the application history. Internal notes are never returned to candidates.
-
-**Notifications.** Created by the server on: new application, withdrawal, status changes (including interview time), company approved/rejected, new company registered (to admins), job removed by an admin, and recruiter added. The bell in the header polls every 30 seconds and refreshes immediately after you read one.
-
-**Skill match.** `utils/skills.js`: share of a job's required skills present on the candidate's profile (case-insensitive). The score is stored on each application at apply time so recruiters see it without recomputing.
-
-### API overview
-
-All routes are under `/api`; send `Authorization: Bearer <token>`.
-
-- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`; `PATCH /profile`, `PATCH /profile/password`
-- Public: `GET /jobs` (q, location, type, workMode, skills, minSalary, sort, page, limit), `GET /jobs/:id`, `GET /jobs/summary`
-- Job seeker: `POST /jobs/:id/apply`, `POST /jobs/:id/save`, `GET /jobs/saved`, `GET /applications/mine`, `POST /applications/:id/withdraw`
-- Company and recruiter: `/manage/stats`, `/manage/jobs` (CRUD), `/manage/applications` (list, detail, `PATCH .../status`, `POST .../notes`), `/manage/company`
-- Company only: `/manage/recruiters`, `/manage/company/resubmit`
-- Admin: `/admin/stats`, `/admin/companies`, `/admin/users`, `/admin/jobs`
-- `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all`
-
-## Project layout
-
-```
-server/src   config, models/, routes/, middleware/, utils/, seed.js, app.js, index.js
-server/tests api.test.js
-client/src   pages/ (Home, Jobs, JobDetail, Auth, Seeker, Manage, Admin, Notifications), ui.jsx, auth.jsx, api.js, utils.js
+```bash
+npm test --prefix server
 ```
 
-## Known limits
+For frontend tests:
 
-- Resumes are links, not file uploads. Notifications are polled, not pushed (no websockets), and there is no email delivery.
-- Recruiters see all of their company's jobs and applicants, not only their own.
-- Tokens are kept in `localStorage` and there are no refresh tokens or password-reset emails. Rate limiting applies to `/api/auth` only.
-- Mongoose is pinned to v8. In the environment this was built in, Mongoose 9's newer driver failed its connection handshake under Jest while working in plain Node, so v8 was used for a reliable test run.
-- Fonts load from Google Fonts. Offline, the UI falls back to system fonts.
+```bash
+npm test --prefix client
+```
+
+The backend tests check authentication, permissions, job searches, application workflows, company access restrictions, notifications, and administrative operations.
+
+MongoDB must be running before executing the backend tests.
+
+## Current Limitations
+
+- Resume information is stored as links rather than uploaded files.
+- Notifications use periodic polling instead of WebSockets.
+- Email notifications are not implemented.
+- Recruiters can access all jobs and applicants belonging to their company.
+- Authentication tokens are stored in localStorage.
+- Password reset emails and refresh tokens are not currently supported.
+- Rate limiting is applied only to authentication routes.
+- Google Fonts requires an internet connection; system fonts are used as a fallback.
+
+## Conclusion
+
+SkillSync provides a centralized job recruitment platform where candidates can discover opportunities based on their actual skills. By combining skill-based matching, application tracking, company verification, recruiter management, and administrative controls, the platform makes the recruitment process more organized and transparent.
