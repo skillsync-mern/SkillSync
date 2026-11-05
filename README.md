@@ -197,6 +197,41 @@ For backend tests:
 
 ```bash
 npm test --prefix server
+
+
+## Live Demo
+🚀 **Deployed Application:** 
+https://skillsync-dt3b.onrender.com/
+
+
+## How it works
+
+**Company approval.** A company registers as `pending`. Its jobs exist but are hidden from candidates until an admin approves it. A rejected company can fix its profile and resubmit. Admins and company owners get notifications at each step.
+
+**Application pipeline.** `applied → reviewing → shortlisted → interview → offered → hired`, with `rejected` reachable from any active stage and `withdrawn` set by the candidate. The server enforces the allowed moves (`models/Application.js`), requires a future date for interviews, and records every change (who, when, optional message) in the application history. Internal notes are never returned to candidates.
+
+**Notifications.** Created by the server on: new application, withdrawal, status changes (including interview time), company approved/rejected, new company registered (to admins), job removed by an admin, and recruiter added. The bell in the header polls every 30 seconds and refreshes immediately after you read one.
+
+**Skill match.** `utils/skills.js`: share of a job's required skills present on the candidate's profile (case-insensitive). The score is stored on each application at apply time so recruiters see it without recomputing.
+
+### API overview
+
+All routes are under `/api`; send `Authorization: Bearer <token>`.
+
+- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`; `PATCH /profile`, `PATCH /profile/password`
+- Public: `GET /jobs` (q, location, type, workMode, skills, minSalary, sort, page, limit), `GET /jobs/:id`, `GET /jobs/summary`
+- Job seeker: `POST /jobs/:id/apply`, `POST /jobs/:id/save`, `GET /jobs/saved`, `GET /applications/mine`, `POST /applications/:id/withdraw`
+- Company and recruiter: `/manage/stats`, `/manage/jobs` (CRUD), `/manage/applications` (list, detail, `PATCH .../status`, `POST .../notes`), `/manage/company`
+- Company only: `/manage/recruiters`, `/manage/company/resubmit`
+- Admin: `/admin/stats`, `/admin/companies`, `/admin/users`, `/admin/jobs`
+- `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all`
+
+## Project layout
+
+```
+server/src   config, models/, routes/, middleware/, utils/, seed.js, app.js, index.js
+server/tests api.test.js
+client/src   pages/ (Home, Jobs, JobDetail, Auth, Seeker, Manage, Admin, Notifications), ui.jsx, auth.jsx, api.js, utils.js
 ```
 
 For frontend tests:
